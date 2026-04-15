@@ -1277,43 +1277,60 @@
         sdaSolvedPages
       };
     }
-    async function applyProgressPayload(payload) {
-      isApplyingRemoteData = true;
-      const safe = payload && typeof payload === 'object' ? payload : {};
-      applyInputSnapshot(safe.inputValues || {});
-      currentPage = Number.isInteger(Number(safe.currentPage)) ? Number(safe.currentPage) : 1;
-      currentFlow = typeof safe.currentFlow === 'string' ? safe.currentFlow : 'main';
-      finalBranchTarget = safe.finalBranchTarget === 20 ? 20 : (safe.finalBranchTarget === 19 ? 19 : null);
-      maxProgressIndex = Number.isFinite(Number(safe.maxProgressIndex)) ? Number(safe.maxProgressIndex) : 0;
-      currentPdfUrl = String(safe.currentPdfUrl || '');
-      currentPdfRole = String(safe.currentPdfRole || '');
-      pdfScrollTop = Number.isFinite(Number(safe.pdfScrollTop)) ? Number(safe.pdfScrollTop) : 0;
+async function applyProgressPayload(payload) {
+  isApplyingRemoteData = true;
+  const safe = payload && typeof payload === 'object' ? payload : {};
 
-      Object.keys(projectCompleted).forEach(key => { projectCompleted[key] = !!(safe.projectCompleted && safe.projectCompleted[key]); });
-      const localProjectCompleted = loadProjectCompletionLocal();
-      Object.keys(projectCompleted).forEach(key => {
-        projectCompleted[key] = !!(projectCompleted[key] || (localProjectCompleted && localProjectCompleted[key]));
-      });
-      Object.keys(sdaSolvedPages).forEach(key => delete sdaSolvedPages[key]);
-      if (safe.sdaSolvedPages && typeof safe.sdaSolvedPages === 'object') {
-        Object.keys(safe.sdaSolvedPages).forEach(key => { sdaSolvedPages[key] = !!safe.sdaSolvedPages[key]; });
-      }
-      updateProjectCompletionFromSda();
-      syncSolvedPagesFromAnswers();
-      updateProjectOverlays();
-      showPage(currentPage);
+  applyInputSnapshot(safe.inputValues || {});
+  currentPage = Number.isInteger(Number(safe.currentPage)) ? Number(safe.currentPage) : 1;
+  currentFlow = typeof safe.currentFlow === 'string' ? safe.currentFlow : 'main';
+  finalBranchTarget = safe.finalBranchTarget === 20 ? 20 : (safe.finalBranchTarget === 19 ? 19 : null);
+  maxProgressIndex = Number.isFinite(Number(safe.maxProgressIndex)) ? Number(safe.maxProgressIndex) : 0;
+  currentPdfUrl = String(safe.currentPdfUrl || '');
+  currentPdfRole = String(safe.currentPdfRole || '');
+  pdfScrollTop = Number.isFinite(Number(safe.pdfScrollTop)) ? Number(safe.pdfScrollTop) : 0;
 
-      if (currentPdfUrl) {
-        try {
-          await renderPdfIntoSecondCanvas(currentPdfUrl, currentPdfRole, pdfScrollTop);
-        } catch (err) {
-          console.error(err);
-        }
-      } else {
-        exitPdfMode();
-      }
-      isApplyingRemoteData = false;
+  // Fix restored navigation state
+  if (currentPage === 19 || currentPage === 20) {
+    currentFlow = 'main';
+    finalBranchTarget = currentPage;
+  } else if (currentPage >= 13 && currentPage <= 18) {
+    currentFlow = 'main';
+  }
+
+  Object.keys(projectCompleted).forEach(key => {
+    projectCompleted[key] = !!(safe.projectCompleted && safe.projectCompleted[key]);
+  });
+
+  const localProjectCompleted = loadProjectCompletionLocal();
+  Object.keys(projectCompleted).forEach(key => {
+    projectCompleted[key] = !!(projectCompleted[key] || (localProjectCompleted && localProjectCompleted[key]));
+  });
+
+  Object.keys(sdaSolvedPages).forEach(key => delete sdaSolvedPages[key]);
+  if (safe.sdaSolvedPages && typeof safe.sdaSolvedPages === 'object') {
+    Object.keys(safe.sdaSolvedPages).forEach(key => {
+      sdaSolvedPages[key] = !!safe.sdaSolvedPages[key];
+    });
+  }
+
+  updateProjectCompletionFromSda();
+  syncSolvedPagesFromAnswers();
+  updateProjectOverlays();
+  showPage(currentPage);
+
+  if (currentPdfUrl) {
+    try {
+      await renderPdfIntoSecondCanvas(currentPdfUrl, currentPdfRole, pdfScrollTop);
+    } catch (err) {
+      console.error(err);
     }
+  } else {
+    exitPdfMode();
+  }
+
+  isApplyingRemoteData = false;
+}
 
     async function apiFetch(path, options = {}) {
       const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
