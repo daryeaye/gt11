@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geotopia Powerfall Pt4</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Caveat&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Love+Ya+Like+A+Sister&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      overflow-y: auto;
+      background: url('https://daryeaye.github.io/geotopia/thatsit.png') no-repeat center center fixed;
+      background-size: cover;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 10px 0 40px;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    #header {
+      width: 960px;
+      background: #eee;
+      padding: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      z-index: 2000;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      box-sizing: border-box;
+    }
+    #topAuthRow, #progressRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #topAuthLeft {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    #logoutBtn, #introBtn, #authRegisterBtn, #authLoginBtn, #openFileBtn, #prev-btn, #next-btn, #collapse-widget,
+    #side-widget button:not(#collapse-widget) {
+      font-family: "Love Ya Like A Sister", cursive;
+    }
+    #logoutBtn, #introBtn, #authRegisterBtn, #authLoginBtn {
+      font-size: 22px;
+      padding: 6px 12px;
+      cursor: pointer;
+      background-color: lightblue;
+      border: none;
+      line-height: 1;
+      border-radius: 6px;
+    }
+    #authStatus {
+      font-size: 15px;
+      font-family: "Comic Sans MS", sans-serif;
+      color: #222;
+      min-width: 170px;
+      text-align: right;
+    }
+    #progressBar {
+      flex: 1;
+      background: #ccc;
+      height: 20px;
+      margin: 0 10px 0 0;
+      position: relative;
+    }
+    #progress {
+      background: green;
+      height: 100%;
+      width: 0%;
+    }
+    #progressText {
+      font-size: 16px;
+      white-space: nowrap;
+    }
+    #saveStatus {
+      font-size: 13px;
+      color: #444;
+      min-width: 120px;
+      text-align: right;
+    }
+    #main-area {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    #main-wrapper {
+      position: relative;
+      width: 960px;
+    }
+    #nav-buttons {
+      position: absolute;
+      top: 50%;
+      left: -150px;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 3000;
+    }
+    button {
+      font-family: "Comic Sans MS", sans-serif;
+      font-size: 20px;
+      background-color: lightblue;
+      border: none;
+      padding: 10px 20px;
+      margin: 0;
+      cursor: pointer;
+    }
+    #container {
+      position: relative;
+      width: 960px;
+      height: 540px;
+      border: 1px solid #ccc;
+      background: white;
+      overflow: hidden;
+    }
+    .page {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 960px;
+      height: 540px;
+      display: none;
+      overflow: hidden;
+      background: white;
+    }
+    .page.active {
+      display: block;
+    }
+    .page-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+      background: white;
+      z-index: 1;
+    }
+    .textbox {
+      position: absolute;
+      background-color: #bdbdbd;
+      border: 1px solid black;
+      font-family: "Comic Sans MS", sans-serif;
+      color: black;
+      padding: 2px 6px;
+      box-sizing: border-box;
+      z-index: 30;
+      resize: none;
+      outline: none;
+    }
+    .answerbox {
+      font-size: 20px;
+      text-align: center;
+      padding: 0 4px;
+    }
+    .smallbox {
+      font-size: 14px;
+      text-align: center;
+      padding: 0 4px;
+    }
+    .bigbox {
+      font-size: 20px;
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.2;
+      padding: 6px;
+    }
+    .hotspot {
+      position: absolute;
+      z-index: 9999;
+      background: rgba(173,216,230,0.95);
+      border: 2px solid #000;
+      border-radius: 8px;
+      color: #000;
+      font-family: "Comic Sans MS", sans-serif;
+      font-size: 18px;
+    }
+    .invisible-choice {
+      position: absolute;
+      z-index: 9999;
+      background: transparent !important;
+      border: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      box-shadow: none !important;
+      cursor: pointer;
+    }
+    .project-overlay {
+      position: absolute;
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.75);
+      color: #26ff63;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      pointer-events: none;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .sda-wrap {
+      position: absolute;
+      overflow: hidden;
+      z-index: 24;
+      display: none;
+      pointer-events: none;
+      background: transparent;
+    }
+    .sda-result-full,
+    .sda-door {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+    .sda-result-full {
+      object-fit: fill;
+      z-index: 1;
+    }
+    .sda-result-false {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 100%;
+      max-height: 100%;
+      display: none;
+      object-fit: contain;
+      z-index: 1;
+    }
+    .sda-door {
+      object-fit: fill;
+      z-index: 2;
+      transform: translateY(-100%);
+    }
+    #pageTransitionOverlay {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      z-index: 10050;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s ease;
+    }
+    #side-widget {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 200px;
+      height: 200px;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      padding: 10px;
+      box-sizing: border-box;
+      font-family: 'Caveat', cursive;
+      z-index: 999;
+      transition: all 0.25s ease;
+    }
+    #side-widget.collapsed {
+      width: 120px;
+      height: 24px;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: rgba(249,249,249,0.95);
+      border: 1px solid #ccc;
+      font-family: "Comic Sans MS", sans-serif;
+      font-size: 8px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    #side-widget.collapsed * {
+      display: none !important;
+    }
+    #side-widget.collapsed::after {
+      content: "Translation";
+    }
+    #collapse-widget {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      line-height: 1;
+      font-size: 14px;
+      background: lightblue;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: "Comic Sans MS", sans-serif;
+    }
+    #side-widget p.title {
+      font-size: 24px;
+      text-align: center;
+      margin: 0 0 10px;
+    }
+    #side-widget button:not(#collapse-widget) {
+      display: block;
+      margin: 0 auto;
+      font-size: 20px;
+      cursor: pointer;
+      text-align: center;
+      background: lightblue;
+      border: none;
+      padding: 10px;
+      font-family: "Comic Sans MS", sans-serif;
+    }
+    #side-widget a {
+      display: block;
+      margin: 0 auto;
+      font-size: 14px;
+      cursor: pointer;
+      text-align: center;
+      background: lightblue;
+      border: none;
+      padding: 6px;
+      text-decoration: none;
+      color: inherit;
+      font-family: "Comic Sans MS", sans-serif;
+    }
+    #selection-overlay {
+      position: fixed;
+      inset: 0;
+      cursor: crosshair;
+      z-index: 11000;
+      background: rgba(0,0,0,0.03);
+    }
+    #selection-box {
+      position: absolute;
+      border: 2px dashed red;
+      background: rgba(0, 0, 0, 0.1);
+    }
+    #role-container {
+      position: relative;
+      width: 960px;
+      height: 540px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      margin-top: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+    #role-stage {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1600px;
+      height: 900px;
+      transform-origin: top left;
+      transform: scale(0.6);
+      background: url('https://daryeaye.github.io/geotopia/role.jpg') no-repeat center/cover;
+    }
+    .role-hotspot {
+      position: absolute;
+      background: rgba(255,0,0,0);
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+    #pdfViewer {
+      position: absolute;
+      inset: 0;
+      display: none;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: #fff;
+      z-index: 5;
+    }
+    .pdfPageCanvas {
+      display: block;
+      margin: 12px auto;
+      background: white;
+    }
+    #pdfStatus {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-family: "Comic Sans MS", sans-serif;
+      font-size: 14px;
+      color: #111;
+      background: rgba(255,255,255,0.85);
+      padding: 6px 10px;
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 6px;
+      z-index: 10;
+      display: none;
+    }
+    #role-container.pdf-mode #role-stage {
+      display: none;
+    }
+    #openFileWrap {
+      width: 960px;
+      text-align: center;
+      margin-top: 10px;
+    }
+    #openFileBtn {
+      font-size: 16px;
+      padding: 8px 16px;
+      background: lightblue;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      line-height: 1;
+    }
+    #authOverlay, #customPopupOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.78);
+      z-index: 15000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #customPopupOverlay {
+      z-index: 20000;
+      background: rgba(0,0,0,0.55);
+    }
+    #authOverlayBox, #customPopupBox {
+      width: min(430px, 88vw);
+      background: #fffdf7;
+      border: 3px solid #000;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      padding: 24px 20px 18px;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    #authOverlayTitle {
+      font-family: "Love Ya Like A Sister", cursive;
+      font-size: 34px;
+      line-height: 1.05;
+      margin-bottom: 10px;
+      color: #111;
+    }
+    #authOverlayText {
+      font-family: "Comic Sans MS", sans-serif;
+      font-size: 16px;
+      line-height: 1.35;
+      color: #222;
+      margin-bottom: 14px;
+    }
+    #auth-username, #auth-password {
+      width: 100%;
+      font-size: 18px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      border: 2px solid #000;
+      border-radius: 8px;
+      font-family: "Comic Sans MS", sans-serif;
+      background: #fff;
+    }
+    #authOverlayButtons, #customPopupButtons {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    #authModalStatus {
+      font-family: "Comic Sans MS", sans-serif;
+      font-size: 14px;
+      line-height: 1.3;
+      min-height: 18px;
+      margin-top: 12px;
+      color: #222;
+    }
+    #customPopupMessage {
+      font-size: 24px;
+      line-height: 1.35;
+      color: #111;
+      margin-bottom: 18px;
+      font-family: "Comic Sans MS", sans-serif;
+    }
+    .popupBtn {
+      font-family: "Love Ya Like A Sister", cursive;
+      font-size: 24px;
+      background: lightblue;
+      border: 2px solid #000;
+      border-radius: 10px;
+      padding: 8px 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <div id="header">
+      <div id="topAuthRow">
+        <div id="topAuthLeft">
+          <button id="logoutBtn" type="button" style="display:none;">Log Out</button>
+          <button id="introBtn" type="button">Intro</button>
+        </div>
+        <div id="authStatus">Not logged in</div>
+      </div>
+      <div id="progressRow">
+        <div id="progressBar"><div id="progress"></div></div>
+        <span id="progressText">0% completed</span>
+        <span id="saveStatus">Not saved yet</span>
+      </div>
+    </div>
+
+    <div id="main-area">
+      <div id="main-wrapper">
+        <div id="nav-buttons">
+          <button id="prev-btn" type="button">Previous</button>
+          <button id="next-btn" type="button">Next</button>
+        </div>
+
+        <div id="container">
+          <div id="page1" class="page active">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-01.jpg" alt="Page 1" crossorigin="anonymous" referrerpolicy="no-referrer">
+          </div>
+
+          <div id="page2" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-02.jpg" alt="Page 2" crossorigin="anonymous" referrerpolicy="no-referrer">
+          </div>
+
+          <div id="page3" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-03.jpg" alt="Page 3" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <button id="projectAButton" class="invisible-choice" style="left:23px; top:217px; width:132px; height:302px;"></button>
+            <button id="projectBButton" class="invisible-choice" style="left:188px; top:217px; width:132px; height:302px;"></button>
+            <button id="projectCButton" class="invisible-choice" style="left:352px; top:217px; width:133px; height:302px;"></button>
+            <div id="projectAOverlay" class="project-overlay" style="left:23px; top:217px; width:132px; height:302px;">Completed</div>
+            <div id="projectBOverlay" class="project-overlay" style="left:188px; top:217px; width:132px; height:302px;">Completed</div>
+            <div id="projectCOverlay" class="project-overlay" style="left:352px; top:217px; width:133px; height:302px;">Completed</div>
+          </div>
+
+          <div id="page4" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-04.jpg" alt="Page 4" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p4-notes" style="left:8px; top:317px; width:404px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="4" data-savekey="p4-answer" style="left:221px; top:466px; width:84px; height:44px;">
+            <input type="text" class="textbox smallbox" data-savekey="p4-1" style="left:502px; top:258px; width:53px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p4-2" style="left:711px; top:258px; width:53px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p4-3" style="left:458px; top:428px; width:54px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p4-4" style="left:703px; top:433px; width:53px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p4-5" style="left:791px; top:394px; width:53px; height:24px;">
+            <button class="invisible-choice sda-trigger" data-page="4" style="left:599px; top:484px; width:192px; height:44px;"></button>
+            <div id="sda-4" class="sda-wrap" style="left:0px; top:0px; width:423px; height:216px;">
+              <img class="sda-result-full" alt="True image for page 4">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door1.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page5" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-05.jpg" alt="Page 5" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p5-notes" style="left:8px; top:317px; width:404px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="5" data-savekey="p5-answer" style="left:221px; top:466px; width:84px; height:44px;">
+            <input type="text" class="textbox smallbox" data-savekey="p5-1" style="left:531px; top:83px; width:53px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p5-2" style="left:494px; top:122px; width:53px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p5-3" style="left:639px; top:122px; width:53px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p5-4" style="left:455px; top:189px; width:54px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p5-5" style="left:738px; top:189px; width:54px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p5-6" style="left:639px; top:328px; width:53px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p5-7" style="left:738px; top:393px; width:54px; height:24px;">
+            <button class="invisible-choice sda-trigger" data-page="5" style="left:599px; top:484px; width:192px; height:44px;"></button>
+            <div id="sda-5" class="sda-wrap" style="left:0px; top:0px; width:423px; height:216px;">
+              <img class="sda-result-full" alt="True image for page 5">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door1.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page6" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-06.jpg" alt="Page 6" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p6-notes" style="left:8px; top:317px; width:404px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="6" data-savekey="p6-answer" style="left:221px; top:466px; width:84px; height:44px;">
+            <input type="text" class="textbox smallbox" data-savekey="p6-1" style="left:710px; top:65px; width:51px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p6-2" style="left:652px; top:124px; width:51px; height:23px;">
+            <input type="text" class="textbox smallbox" data-savekey="p6-3" style="left:484px; top:177px; width:51px; height:23px;">
+            <input type="text" class="textbox smallbox" data-savekey="p6-4" style="left:543px; top:236px; width:52px; height:23px;">
+            <input type="text" class="textbox smallbox" data-savekey="p6-5" style="left:710px; top:297px; width:51px; height:23px;">
+            <input type="text" class="textbox smallbox" data-savekey="p6-6" style="left:652px; top:343px; width:51px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p6-7" style="left:710px; top:408px; width:51px; height:23px;">
+            <button class="invisible-choice sda-trigger" data-page="6" style="left:599px; top:484px; width:192px; height:44px;"></button>
+            <div id="sda-6" class="sda-wrap" style="left:0px; top:0px; width:423px; height:216px;">
+              <img class="sda-result-full" alt="True image for page 6">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door1.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page7" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-07.jpg" alt="Page 7" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p7-notes" style="left:8px; top:317px; width:404px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="7" data-savekey="p7-answer" style="left:221px; top:466px; width:84px; height:44px;">
+            <input type="text" class="textbox smallbox" data-savekey="p7-1" style="left:485px; top:81px; width:54px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p7-2" style="left:516px; top:236px; width:53px; height:24px;">
+            <button class="invisible-choice sda-trigger" data-page="7" style="left:599px; top:484px; width:192px; height:44px;"></button>
+            <div id="sda-7" class="sda-wrap" style="left:0px; top:0px; width:423px; height:216px;">
+              <img class="sda-result-full" alt="True image for page 7">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door1.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page8" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-08.jpg" alt="Page 8" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p8-notes" style="left:8px; top:317px; width:404px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="8" data-savekey="p8-answer" style="left:221px; top:466px; width:84px; height:44px;">
+            <input type="text" class="textbox smallbox" data-savekey="p8-1" style="left:682px; top:297px; width:54px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p8-2" style="left:810px; top:226px; width:54px; height:24px;">
+            <button class="invisible-choice sda-trigger" data-page="8" style="left:599px; top:484px; width:192px; height:44px;"></button>
+            <div id="sda-8" class="sda-wrap" style="left:0px; top:0px; width:423px; height:216px;">
+              <img class="sda-result-full" alt="True image for page 8">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door1.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page9" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-09.jpg" alt="Page 9" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p9-notes" style="left:8px; top:317px; width:404px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="9" data-savekey="p9-answer" style="left:221px; top:466px; width:84px; height:44px;">
+            <input type="text" class="textbox smallbox" data-savekey="p9-1" style="left:614px; top:43px; width:53px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p9-2" style="left:680px; top:97px; width:53px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p9-3" style="left:552px; top:217px; width:53px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p9-4" style="left:796px; top:217px; width:53px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p9-5" style="left:495px; top:281px; width:53px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p9-6" style="left:733px; top:281px; width:53px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p9-7" style="left:863px; top:281px; width:53px; height:24px;">
+            <button class="invisible-choice sda-trigger" data-page="9" style="left:599px; top:484px; width:192px; height:44px;"></button>
+            <div id="sda-9" class="sda-wrap" style="left:0px; top:0px; width:423px; height:216px;">
+              <img class="sda-result-full" alt="True image for page 9">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door1.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page10" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-10.jpg" alt="Page 10" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p10-notes" style="left:8px; top:317px; width:404px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="10" data-savekey="p10-answer" style="left:221px; top:466px; width:84px; height:44px;">
+            <input type="text" class="textbox smallbox" data-savekey="p10-1" style="left:541px; top:228px; width:53px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p10-2" style="left:776px; top:228px; width:54px; height:24px;">
+            <button class="invisible-choice sda-trigger" data-page="10" style="left:599px; top:484px; width:192px; height:44px;"></button>
+            <div id="sda-10" class="sda-wrap" style="left:0px; top:0px; width:423px; height:216px;">
+              <img class="sda-result-full" alt="True image for page 10">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door1.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page11" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-11.jpg" alt="Page 11" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p11-notes" style="left:8px; top:317px; width:404px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="11" data-savekey="p11-answer" style="left:221px; top:466px; width:84px; height:44px;">
+            <input type="text" class="textbox smallbox" data-savekey="p11-1" style="left:559px; top:248px; width:54px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p11-2" style="left:783px; top:248px; width:54px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p11-3" style="left:642px; top:313px; width:54px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p11-4" style="left:642px; top:378px; width:54px; height:25px;">
+            <button class="invisible-choice sda-trigger" data-page="11" style="left:599px; top:484px; width:192px; height:44px;"></button>
+            <div id="sda-11" class="sda-wrap" style="left:0px; top:0px; width:423px; height:216px;">
+              <img class="sda-result-full" alt="True image for page 11">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door1.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page12" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-12.jpg" alt="Page 12" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p12-notes" style="left:8px; top:317px; width:404px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="12" data-savekey="p12-answer" style="left:221px; top:466px; width:84px; height:44px;">
+            <input type="text" class="textbox smallbox" data-savekey="p12-1" style="left:756px; top:47px; width:53px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p12-2" style="left:546px; top:127px; width:53px; height:24px;">
+            <input type="text" class="textbox smallbox" data-savekey="p12-3" style="left:651px; top:216px; width:53px; height:25px;">
+            <input type="text" class="textbox smallbox" data-savekey="p12-4" style="left:651px; top:317px; width:53px; height:24px;">
+            <button class="invisible-choice sda-trigger" data-page="12" style="left:599px; top:484px; width:192px; height:44px;"></button>
+            <div id="sda-12" class="sda-wrap" style="left:0px; top:0px; width:423px; height:216px;">
+              <img class="sda-result-full" alt="True image for page 12">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door1.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page13" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-13.jpg" alt="Page 13" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <button id="page13Hotspot" class="invisible-choice" style="left:555px; top:305px; width:207px; height:141px;"></button>
+          </div>
+
+          <div id="page14" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-14.jpg" alt="Page 14" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p14-notes" style="left:374px; top:271px; width:556px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="14" data-savekey="p14-answer" style="left:522px; top:465px; width:83px; height:45px;">
+            <button class="invisible-choice sda-trigger" data-page="14" style="left:714px; top:469px; width:165px; height:45px;"></button>
+            <div id="sda-14" class="sda-wrap" style="left:33px; top:230px; width:327px; height:300px;">
+              <img class="sda-result-full" alt="True image for page 14">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door2.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page15" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-15.jpg" alt="Page 15" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p15-notes" style="left:374px; top:271px; width:556px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="15" data-savekey="p15-answer" style="left:522px; top:465px; width:83px; height:45px;">
+            <button class="invisible-choice sda-trigger" data-page="15" style="left:714px; top:469px; width:165px; height:45px;"></button>
+            <div id="sda-15" class="sda-wrap" style="left:33px; top:230px; width:327px; height:300px;">
+              <img class="sda-result-full" alt="True image for page 15">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door2.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page16" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-16.jpg" alt="Page 16" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p16-notes" style="left:374px; top:271px; width:556px; height:141px;"></textarea>
+            <input type="text" class="textbox answerbox sda-answer" data-page="16" data-savekey="p16-answer" style="left:522px; top:465px; width:83px; height:45px;">
+            <button class="invisible-choice sda-trigger" data-page="16" style="left:714px; top:469px; width:165px; height:45px;"></button>
+            <div id="sda-16" class="sda-wrap" style="left:33px; top:230px; width:327px; height:300px;">
+              <img class="sda-result-full" alt="True image for page 16">
+              <img class="sda-result-false" src="https://daryeaye.github.io/gt11/false.png" alt="False image">
+              <img class="sda-door" src="https://daryeaye.github.io/gt11/door2.jpg" alt="Door image">
+            </div>
+          </div>
+
+          <div id="page17" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-17.jpg" alt="Page 17" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <button id="page17Choice19" class="invisible-choice" style="left:322px; top:336px; width:130px; height:75px;"></button>
+            <button id="page17Choice20" class="invisible-choice" style="left:526px; top:336px; width:131px; height:75px;"></button>
+          </div>
+
+          <div id="page18" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-18.jpg" alt="Page 18" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <textarea class="textbox bigbox" data-savekey="p18-1" style="left:355px; top:412px; width:144px; height:39px;"></textarea>
+            <textarea class="textbox bigbox" data-savekey="p18-2" style="left:337px; top:473px; width:155px; height:38px;"></textarea>
+            <input type="text" class="textbox answerbox" data-savekey="p18-answer" style="left:618px; top:444px; width:134px; height:39px;">
+          </div>
+
+          <div id="page19" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-19.jpg" alt="Page 19" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <input type="text" class="textbox answerbox final-code" data-savekey="p19-answer" style="left:614px; top:423px; width:199px; height:50px;">
+          </div>
+
+          <div id="page20" class="page">
+            <img class="page-image" src="https://daryeaye.github.io/gt11/11-20.jpg" alt="Page 20" crossorigin="anonymous" referrerpolicy="no-referrer">
+            <input type="text" class="textbox answerbox final-code" data-savekey="p20-answer" style="left:153px; top:422px; width:198px; height:50px;">
+          </div>
+
+          <div id="pageTransitionOverlay"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="role-container" aria-label="Role selection canvas">
+      <div id="pdfStatus">Loading PDF...</div>
+      <div id="role-stage">
+        <button class="role-hotspot" id="hotspot-officer" style="left:195px; top:121px; width:328px; height:276px;" aria-label="Officer" title="Officer"></button>
+        <button class="role-hotspot" id="hotspot-professor" style="left:637px; top:121px; width:328px; height:277px;" aria-label="Professor" title="Professor"></button>
+        <button class="role-hotspot" id="hotspot-hacker" style="left:1079px; top:121px; width:328px; height:277px;" aria-label="Hacker" title="Hacker"></button>
+      </div>
+      <div id="pdfViewer"></div>
+    </div>
+
+    <div id="openFileWrap"><button id="openFileBtn" type="button">Open the file on a new tab</button></div>
+  </div>
+
+  <div id="side-widget" class="collapsed" aria-label="Translation widget">
+    <button id="collapse-widget" type="button" aria-label="Collapse translation widget">–</button>
+    <p class="title">Translation!</p>
+    <button id="select-text" type="button">Select Text</button>
+    <p><a href="https://translate.google.com/?sl=en&tl=es&op=images" target="_blank">Click me and paste from clipboard</a></p>
+  </div>
+
+  <div id="authOverlay">
+    <div id="authOverlayBox">
+      <div id="authOverlayTitle">Sign in to start</div>
+      <div id="authOverlayText">Please log in or register before entering the quest. Username cannot contain spaces.</div>
+      <input type="text" id="auth-username" placeholder="Username" autocomplete="username" />
+      <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" />
+      <div id="authOverlayButtons">
+        <button id="authRegisterBtn" type="button">Register</button>
+        <button id="authLoginBtn" type="button">Log In</button>
+      </div>
+      <div id="authModalStatus"></div>
+    </div>
+  </div>
+
+  <div id="customPopupOverlay">
+    <div id="customPopupBox">
+      <div id="customPopupMessage"></div>
+      <div id="customPopupButtons"></div>
+    </div>
+  </div>
+
+  <script>
+    const APP_ID = "powerfall-pt4";
+    const WORKER_BASE_URL = "https://geotopia-powerfall-auth-api.daryeaye.workers.dev";
+    const SESSION_STORAGE = {
+      token: "gt11_auth_token",
+      username: "gt11_auth_username"
+    };
+    const INTRO_URL = "https://youtu.be/F8paV80TGac";
+    const CREATE_BATTERY_WARNING = "Don’t leave without creating the battery unit!";
+    const ALL_PROJECTS_WARNING = "Hold on. Let’s complete all 3 projects before we proceed.";
+    const PROJECTS_DONE_MESSAGE = "Click next to continue";
+    const PAGE18_WARNING = "One tiny mistake can ruin the whole project.";
+    const BELT_URL = "https://daryeaye.github.io/gt11/belt.jpg";
+    const FALSE_IMAGE_URL = "https://daryeaye.github.io/gt11/false.png";
+    const ROLE_PDF_URLS = {
+      officer: "https://daryeaye.github.io/gt8/GT2%20Officer.pdf",
+      professor: "https://daryeaye.github.io/gt8/GT2%20Professor.pdf",
+      hacker: "https://daryeaye.github.io/gt8/GT2%20Hacker.pdf"
+    };
+
+    const PROJECT_FLOW = {
+      A: [4, 5, 6],
+      B: [7, 8, 9],
+      C: [10, 11, 12]
+    };
+    const FLOW_STAGE_KEYS = [
+      "page1", "page2", "page3", "page4", "page5", "page6", "page7", "page8", "page9",
+      "page10", "page11", "page12", "page13", "page14", "page15", "page16", "page17", "page18", "end"
+    ];
+    const PAGE_TO_STAGE_KEY = {
+      1: "page1", 2: "page2", 3: "page3", 4: "page4", 5: "page5", 6: "page6", 7: "page7", 8: "page8", 9: "page9",
+      10: "page10", 11: "page11", 12: "page12", 13: "page13", 14: "page14", 15: "page15", 16: "page16", 17: "page17", 18: "page18",
+      19: "end", 20: "end"
+    };
+    const PROJECT_OVERLAY_IDS = { A: "projectAOverlay", B: "projectBOverlay", C: "projectCOverlay" };
+    const PROJECT_COMPLETION_LOCAL_PREFIX = "gt11_project_completion_";
+    const PROJECT_BUTTON_IDS = { A: "projectAButton", B: "projectBButton", C: "projectCButton" };
+
+    const SDA_CONFIG = {
+      4: { answerKey: "p4-answer", expected: ["2600"], trueImage: "https://daryeaye.github.io/gt11/T04.jpg", doorImage: "https://daryeaye.github.io/gt11/door1.jpg" },
+      5: { answerKey: "p5-answer", expected: ["158"], trueImage: "https://daryeaye.github.io/gt11/T05.jpg", doorImage: "https://daryeaye.github.io/gt11/door1.jpg" },
+      6: { answerKey: "p6-answer", expected: ["274"], trueImage: "https://daryeaye.github.io/gt11/T06.jpg", doorImage: "https://daryeaye.github.io/gt11/door1.jpg" },
+      7: { answerKey: "p7-answer", expected: ["75"], trueImage: "https://daryeaye.github.io/gt11/T07.jpg", doorImage: "https://daryeaye.github.io/gt11/door1.jpg" },
+      8: { answerKey: "p8-answer", expected: ["108"], trueImage: "https://daryeaye.github.io/gt11/T08.jpg", doorImage: "https://daryeaye.github.io/gt11/door1.jpg" },
+      9: { answerKey: "p9-answer", expected: ["512"], trueImage: "https://daryeaye.github.io/gt11/T09.jpg", doorImage: "https://daryeaye.github.io/gt11/door1.jpg" },
+      10: { answerKey: "p10-answer", expected: ["224"], trueImage: "https://daryeaye.github.io/gt11/T10.jpg", doorImage: "https://daryeaye.github.io/gt11/door1.jpg" },
+      11: { answerKey: "p11-answer", expected: ["60"], trueImage: "https://daryeaye.github.io/gt11/T11.jpg", doorImage: "https://daryeaye.github.io/gt11/door1.jpg" },
+      12: { answerKey: "p12-answer", expected: ["240"], trueImage: "https://daryeaye.github.io/gt11/T12.jpg", doorImage: "https://daryeaye.github.io/gt11/door1.jpg" },
+      14: { answerKey: "p14-answer", expected: ["110", "550"], trueImage: "https://daryeaye.github.io/gt11/T14.jpg", doorImage: "https://daryeaye.github.io/gt11/door2.jpg" },
+      15: { answerKey: "p15-answer", expected: ["15", "125"], trueImage: "https://daryeaye.github.io/gt11/T15.jpg", doorImage: "https://daryeaye.github.io/gt11/door2.jpg" },
+      16: { answerKey: "p16-answer", expected: ["510"], trueImage: "https://daryeaye.github.io/gt11/T16.jpg", doorImage: "https://daryeaye.github.io/gt11/door2.jpg" }
+    };
+
+    let currentPage = 1;
+    let currentFlow = "main";
+    let finalBranchTarget = null;
+    let maxProgressIndex = 0;
+    let authToken = "";
+    let loggedInUsername = "";
+    let autoSaveTimer = null;
+    let saveInFlight = false;
+    let saveQueued = false;
+    let isApplyingRemoteData = false;
+    let currentPdfUrl = "";
+    let currentPdfRole = "";
+    let pdfScrollTop = 0;
+    let selectionOverlayActive = false;
+
+    const projectCompleted = { A: false, B: false, C: false };
+    const sdaSolvedPages = {};
+    const sdaBusyPages = {};
+
+    function openIntro() {
+      window.open(INTRO_URL, "_blank");
+    }
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    function normalizeText(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+    function setSaveStatus(text) {
+      document.getElementById("saveStatus").textContent = text;
+    }
+    function setAuthStatus(message, isError = false) {
+      const authStatus = document.getElementById("authStatus");
+      authStatus.textContent = message;
+      authStatus.style.color = isError ? "#b00020" : "#222";
+    }
+    function setAuthModalStatus(message, isError = false) {
+      const status = document.getElementById("authModalStatus");
+      if (!status) return;
+      status.textContent = message || "";
+      status.style.color = isError ? "#b00020" : "#222";
+    }
+    function closeCustomPopup() {
+      document.getElementById("customPopupOverlay").style.display = "none";
+      document.getElementById("customPopupMessage").textContent = "";
+      document.getElementById("customPopupButtons").innerHTML = "";
+    }
+    function showCustomPopup(message, buttons = [{ text: "OK", action: closeCustomPopup }]) {
+      const overlay = document.getElementById("customPopupOverlay");
+      const msg = document.getElementById("customPopupMessage");
+      const btnWrap = document.getElementById("customPopupButtons");
+      msg.textContent = message;
+      btnWrap.innerHTML = "";
+      buttons.forEach(btn => {
+        const b = document.createElement("button");
+        b.className = "popupBtn";
+        b.textContent = btn.text;
+        b.onclick = () => {
+          closeCustomPopup();
+          if (btn.action) btn.action();
+        };
+        btnWrap.appendChild(b);
+      });
+      overlay.style.display = "flex";
+    }
+    function showMessagePopup(message) {
+      showCustomPopup(message, [{ text: "OK", action: closeCustomPopup }]);
+    }
+    async function runCanvasTransition(action) {
+      const overlay = document.getElementById("pageTransitionOverlay");
+      overlay.style.pointerEvents = "auto";
+      overlay.style.opacity = "1";
+      await wait(280);
+      action();
+      await wait(60);
+      overlay.style.opacity = "0";
+      await wait(280);
+      overlay.style.pointerEvents = "none";
+    }
+    function openAuthOverlay(prefillUsername = "") {
+      const overlay = document.getElementById("authOverlay");
+      const usernameInput = document.getElementById("auth-username");
+      const passwordInput = document.getElementById("auth-password");
+      usernameInput.value = prefillUsername || loggedInUsername || "";
+      passwordInput.value = "";
+      setAuthModalStatus("Please sign in to continue.", false);
+      overlay.style.display = "flex";
+      usernameInput.focus();
+    }
+    function closeAuthOverlay() {
+      document.getElementById("authOverlay").style.display = "none";
+      setAuthModalStatus("", false);
+    }
+    function maybeRequireAuthOverlay() {
+      if (!authToken) openAuthOverlay(loggedInUsername || "");
+    }
+
+    function getProjectCompletionLocalKey(username = loggedInUsername) {
+      const safeName = String(username || '').trim().toLowerCase();
+      return safeName ? (PROJECT_COMPLETION_LOCAL_PREFIX + safeName) : '';
+    }
+    function persistProjectCompletionLocal() {
+      const key = getProjectCompletionLocalKey();
+      if (!key) return;
+      try {
+        localStorage.setItem(key, JSON.stringify(projectCompleted));
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    function loadProjectCompletionLocal(username = loggedInUsername) {
+      const key = getProjectCompletionLocalKey(username);
+      if (!key) return {};
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (err) {
+        console.error(err);
+        return {};
+      }
+    }
+
+    function getStageIndexForPage(pageNum) {
+      const key = PAGE_TO_STAGE_KEY[pageNum] || "page1";
+      return Math.max(0, FLOW_STAGE_KEYS.indexOf(key));
+    }
+    function updateProgress() {
+      const totalSteps = FLOW_STAGE_KEYS.length;
+      const completedSteps = Math.min(maxProgressIndex + 1, totalSteps);
+      const pct = totalSteps ? (completedSteps / totalSteps) * 100 : 0;
+      document.getElementById("progress").style.width = pct + "%";
+      document.getElementById("progressText").textContent = pct.toFixed(0) + "% completed";
+    }
+    function updateProjectOverlays() {
+      ["A", "B", "C"].forEach(key => {
+        const overlay = document.getElementById(PROJECT_OVERLAY_IDS[key]);
+        overlay.style.display = projectCompleted[key] ? "flex" : "none";
+      });
+    }
+    function updateProjectCompletionFromSda() {
+      projectCompleted.A = !!(projectCompleted.A || (sdaSolvedPages[4] && sdaSolvedPages[5] && sdaSolvedPages[6]));
+      projectCompleted.B = !!(projectCompleted.B || (sdaSolvedPages[7] && sdaSolvedPages[8] && sdaSolvedPages[9]));
+      projectCompleted.C = !!(projectCompleted.C || (sdaSolvedPages[10] && sdaSolvedPages[11] && sdaSolvedPages[12]));
+      persistProjectCompletionLocal();
+      updateProjectOverlays();
+    }
+    function allProjectsCompleted() {
+      return projectCompleted.A && projectCompleted.B && projectCompleted.C;
+    }
+
+    function getCurrentFlowSequence() {
+      if (currentFlow === "projectA") return [3, 4, 5, 6];
+      if (currentFlow === "projectB") return [3, 7, 8, 9];
+      if (currentFlow === "projectC") return [3, 10, 11, 12];
+      return [1, 2, 3, 13, 14, 15, 16, 17, 18, finalBranchTarget === 20 ? 20 : 19];
+    }
+    function canLeaveSdaPage(pageNum) {
+      return !SDA_CONFIG[pageNum] || !!sdaSolvedPages[pageNum];
+    }
+    function showPage(pageNum) {
+      document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+      document.getElementById('page' + pageNum).classList.add('active');
+      currentPage = pageNum;
+      updateProjectCompletionFromSda();
+      maxProgressIndex = Math.max(maxProgressIndex, getStageIndexForPage(pageNum));
+      updateProgress();
+      updateProjectOverlays();
+      refreshAllSdaDisplays();
+
+      const seq = getCurrentFlowSequence();
+      const idx = seq.indexOf(pageNum);
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
+
+      prevBtn.style.display = (idx <= 0) ? 'none' : 'inline-block';
+      nextBtn.style.display = (pageNum === 17 || pageNum === 19 || pageNum === 20) ? 'none' : 'inline-block';
+      if (currentFlow === 'main' && pageNum === 18) nextBtn.style.display = 'inline-block';
+      if (pageNum === 13) nextBtn.style.display = 'inline-block';
+      if ([4,5,6,7,8,9,10,11,12,14,15,16].includes(pageNum)) nextBtn.style.display = 'inline-block';
+    }
+
+    function getFieldValue(saveKey) {
+      const el = document.querySelector(`[data-savekey="${saveKey}"]`);
+      return el ? el.value : "";
+    }
+    function answerMatchesPage(pageNum) {
+      const cfg = SDA_CONFIG[pageNum];
+      if (!cfg) return false;
+      const v = normalizeText(getFieldValue(cfg.answerKey));
+      return cfg.expected.some(expected => v.includes(String(expected).toLowerCase()));
+    }
+    function syncSolvedPagesFromAnswers() {
+      updateProjectCompletionFromSda();
+      refreshAllSdaDisplays();
+    }
+
+    function setSdaDisplay(pageNum, state) {
+      const wrap = document.getElementById(`sda-${pageNum}`);
+      if (!wrap) return;
+      const resultFull = wrap.querySelector('.sda-result-full');
+      const resultFalse = wrap.querySelector('.sda-result-false');
+      const door = wrap.querySelector('.sda-door');
+      const cfg = SDA_CONFIG[pageNum];
+      resultFull.src = cfg.trueImage;
+      door.src = cfg.doorImage;
+
+      if (state === 'true') {
+        wrap.style.display = 'block';
+        resultFull.style.display = 'block';
+        resultFalse.style.display = 'none';
+        door.style.display = 'none';
+        door.style.transition = 'none';
+        door.style.transform = 'translateY(-100%)';
+      } else if (state === 'false') {
+        wrap.style.display = 'block';
+        resultFull.style.display = 'none';
+        resultFalse.style.display = 'block';
+        door.style.display = 'none';
+        door.style.transition = 'none';
+        door.style.transform = 'translateY(-100%)';
+      } else {
+        wrap.style.display = 'none';
+        resultFull.style.display = 'none';
+        resultFalse.style.display = 'none';
+        door.style.display = 'none';
+        door.style.transition = 'none';
+        door.style.transform = 'translateY(-100%)';
+      }
+    }
+    function refreshAllSdaDisplays() {
+      Object.keys(SDA_CONFIG).forEach(key => {
+        const pageNum = Number(key);
+        if (sdaBusyPages[pageNum]) return;
+        setSdaDisplay(pageNum, sdaSolvedPages[pageNum] ? 'true' : 'hidden');
+      });
+    }
+    async function triggerSda(pageNum, isCorrect) {
+      const wrap = document.getElementById(`sda-${pageNum}`);
+      if (!wrap || sdaBusyPages[pageNum]) return;
+      if (sdaSolvedPages[pageNum]) {
+        setSdaDisplay(pageNum, 'true');
+        return;
+      }
+      const resultFull = wrap.querySelector('.sda-result-full');
+      const resultFalse = wrap.querySelector('.sda-result-false');
+      const door = wrap.querySelector('.sda-door');
+      const cfg = SDA_CONFIG[pageNum];
+      sdaBusyPages[pageNum] = true;
+
+      wrap.style.display = 'block';
+      resultFull.src = cfg.trueImage;
+      resultFull.style.display = 'none';
+      resultFalse.style.display = 'none';
+      door.src = cfg.doorImage;
+      door.style.display = 'block';
+      door.style.transition = 'none';
+      door.style.transform = 'translateY(-100%)';
+
+      await wait(30);
+      door.style.transition = 'transform 1.2s ease';
+      door.style.transform = 'translateY(0%)';
+      await wait(1300);
+
+      if (isCorrect) {
+        resultFull.style.display = 'block';
+        resultFalse.style.display = 'none';
+      } else {
+        resultFull.style.display = 'none';
+        resultFalse.style.display = 'block';
+      }
+
+      await wait(240);
+      door.style.transform = 'translateY(-100%)';
+      await wait(1300);
+      door.style.display = 'none';
+
+      if (isCorrect) {
+        sdaSolvedPages[pageNum] = true;
+        if ([4,5,6].includes(pageNum)) projectCompleted.A = true;
+        if ([7,8,9].includes(pageNum)) projectCompleted.B = true;
+        if ([10,11,12].includes(pageNum)) projectCompleted.C = true;
+        updateProjectCompletionFromSda();
+        setSdaDisplay(pageNum, 'true');
+      } else {
+        resultFull.style.display = 'none';
+        resultFalse.style.display = 'block';
+        await wait(3000);
+        if (!sdaSolvedPages[pageNum]) {
+          setSdaDisplay(pageNum, 'hidden');
+        } else {
+          setSdaDisplay(pageNum, 'true');
+        }
+      }
+      sdaBusyPages[pageNum] = false;
+      queueCloudSave();
+    }
+
+    async function nextPage() {
+      if (currentPage === 3) {
+        if (!allProjectsCompleted()) {
+          showMessagePopup(ALL_PROJECTS_WARNING);
+          return;
+        }
+        currentFlow = 'main';
+        await runCanvasTransition(() => showPage(13));
+        queueCloudSave();
+        return;
+      }
+      if ([4,5,6,7,8,9,10,11,12,14,15,16].includes(currentPage) && !canLeaveSdaPage(currentPage)) {
+        showMessagePopup(CREATE_BATTERY_WARNING);
+        return;
+      }
+      if (currentPage === 6) {
+        currentFlow = 'main';
+        updateProjectCompletionFromSda();
+        await runCanvasTransition(() => showPage(3));
+        if (allProjectsCompleted()) showMessagePopup(PROJECTS_DONE_MESSAGE);
+        queueCloudSave();
+        return;
+      }
+      if (currentPage === 9) {
+        currentFlow = 'main';
+        updateProjectCompletionFromSda();
+        await runCanvasTransition(() => showPage(3));
+        if (allProjectsCompleted()) showMessagePopup(PROJECTS_DONE_MESSAGE);
+        queueCloudSave();
+        return;
+      }
+      if (currentPage === 12) {
+        currentFlow = 'main';
+        updateProjectCompletionFromSda();
+        await runCanvasTransition(() => showPage(3));
+        if (allProjectsCompleted()) showMessagePopup(PROJECTS_DONE_MESSAGE);
+        queueCloudSave();
+        return;
+      }
+      if (currentPage === 13) {
+        await runCanvasTransition(() => showPage(14));
+        queueCloudSave();
+        return;
+      }
+      if (currentPage === 18) {
+        const v = normalizeText(getFieldValue('p18-answer'));
+        if (!v.includes('1000')) {
+          showMessagePopup(PAGE18_WARNING);
+          return;
+        }
+        const target = finalBranchTarget === 20 ? 20 : 19;
+        await runCanvasTransition(() => showPage(target));
+        queueCloudSave();
+        return;
+      }
+
+      const seq = getCurrentFlowSequence();
+      const idx = seq.indexOf(currentPage);
+      if (idx === -1 || idx >= seq.length - 1) return;
+      await runCanvasTransition(() => showPage(seq[idx + 1]));
+      queueCloudSave();
+    }
+
+    async function prevPage() {
+      const seq = getCurrentFlowSequence();
+      const idx = seq.indexOf(currentPage);
+      if (idx <= 0) return;
+      await runCanvasTransition(() => showPage(seq[idx - 1]));
+      queueCloudSave();
+    }
+
+    function getInputSnapshot() {
+      const snapshot = {};
+      document.querySelectorAll('[data-savekey]').forEach(input => {
+        snapshot[input.dataset.savekey] = input.value || '';
+      });
+      return snapshot;
+    }
+    function applyInputSnapshot(snapshot) {
+      isApplyingRemoteData = true;
+      document.querySelectorAll('[data-savekey]').forEach(input => {
+        const key = input.dataset.savekey;
+        input.value = snapshot && Object.prototype.hasOwnProperty.call(snapshot, key) ? (snapshot[key] ?? '') : '';
+      });
+      isApplyingRemoteData = false;
+    }
+    function buildProgressPayload() {
+      const viewer = document.getElementById('pdfViewer');
+      return {
+        playerName: loggedInUsername,
+        currentPage,
+        currentFlow,
+        finalBranchTarget,
+        maxProgressIndex,
+        currentPdfUrl,
+        currentPdfRole,
+        pdfScrollTop: viewer ? viewer.scrollTop : 0,
+        inputValues: getInputSnapshot(),
+        projectCompleted,
+        sdaSolvedPages
+      };
+    }
+    async function applyProgressPayload(payload) {
+      isApplyingRemoteData = true;
+      const safe = payload && typeof payload === 'object' ? payload : {};
+      applyInputSnapshot(safe.inputValues || {});
+      currentPage = Number.isInteger(Number(safe.currentPage)) ? Number(safe.currentPage) : 1;
+      currentFlow = typeof safe.currentFlow === 'string' ? safe.currentFlow : 'main';
+      finalBranchTarget = safe.finalBranchTarget === 20 ? 20 : (safe.finalBranchTarget === 19 ? 19 : null);
+      maxProgressIndex = Number.isFinite(Number(safe.maxProgressIndex)) ? Number(safe.maxProgressIndex) : 0;
+      currentPdfUrl = String(safe.currentPdfUrl || '');
+      currentPdfRole = String(safe.currentPdfRole || '');
+      pdfScrollTop = Number.isFinite(Number(safe.pdfScrollTop)) ? Number(safe.pdfScrollTop) : 0;
+
+      Object.keys(projectCompleted).forEach(key => { projectCompleted[key] = !!(safe.projectCompleted && safe.projectCompleted[key]); });
+      const localProjectCompleted = loadProjectCompletionLocal();
+      Object.keys(projectCompleted).forEach(key => {
+        projectCompleted[key] = !!(projectCompleted[key] || (localProjectCompleted && localProjectCompleted[key]));
+      });
+      Object.keys(sdaSolvedPages).forEach(key => delete sdaSolvedPages[key]);
+      if (safe.sdaSolvedPages && typeof safe.sdaSolvedPages === 'object') {
+        Object.keys(safe.sdaSolvedPages).forEach(key => { sdaSolvedPages[key] = !!safe.sdaSolvedPages[key]; });
+      }
+      updateProjectCompletionFromSda();
+      syncSolvedPagesFromAnswers();
+      updateProjectOverlays();
+      showPage(currentPage);
+
+      if (currentPdfUrl) {
+        try {
+          await renderPdfIntoSecondCanvas(currentPdfUrl, currentPdfRole, pdfScrollTop);
+        } catch (err) {
+          console.error(err);
+        }
+      } else {
+        exitPdfMode();
+      }
+      isApplyingRemoteData = false;
+    }
+
+    async function apiFetch(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+      if (authToken) headers.Authorization = 'Bearer ' + authToken;
+      const response = await fetch(WORKER_BASE_URL + path, { ...options, headers });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.error || 'Request failed.');
+      return data;
+    }
+    function queueCloudSave() {
+      if (isApplyingRemoteData || !authToken) return;
+      clearTimeout(autoSaveTimer);
+      setSaveStatus('Saving...');
+      autoSaveTimer = setTimeout(() => {
+        if (saveInFlight) {
+          saveQueued = true;
+          return;
+        }
+        saveProgressToServer();
+      }, 900);
+    }
+    async function saveProgressToServer() {
+      if (!authToken || saveInFlight) return;
+      saveInFlight = true;
+      try {
+        await apiFetch('/api/save', {
+          method: 'POST',
+          body: JSON.stringify({ appId: APP_ID, saveData: buildProgressPayload() })
+        });
+        setSaveStatus('Saved');
+      } catch (err) {
+        console.error(err);
+        setSaveStatus('Save failed');
+      } finally {
+        saveInFlight = false;
+        if (saveQueued) {
+          saveQueued = false;
+          saveProgressToServer();
+        }
+      }
+    }
+    function updateAuthUI() {
+      const logoutBtn = document.getElementById('logoutBtn');
+      const loggedIn = !!authToken;
+      logoutBtn.style.display = loggedIn ? 'inline-block' : 'none';
+      setAuthStatus(loggedIn ? ('Logged in as ' + (loggedInUsername || 'student')) : 'Not logged in', false);
+      if (loggedIn) closeAuthOverlay();
+    }
+    function saveSessionLocally(token, username) {
+      authToken = token || '';
+      loggedInUsername = username || '';
+      localStorage.setItem(SESSION_STORAGE.token, authToken);
+      localStorage.setItem(SESSION_STORAGE.username, loggedInUsername);
+      updateAuthUI();
+    }
+    function clearSessionLocally() {
+      authToken = '';
+      loggedInUsername = '';
+      localStorage.removeItem(SESSION_STORAGE.token);
+      localStorage.removeItem(SESSION_STORAGE.username);
+      updateAuthUI();
+    }
+    function restoreSessionLocally() {
+      authToken = localStorage.getItem(SESSION_STORAGE.token) || '';
+      loggedInUsername = localStorage.getItem(SESSION_STORAGE.username) || '';
+      updateAuthUI();
+    }
+    function resetLocalProgressState() {
+      isApplyingRemoteData = true;
+      currentPage = 1;
+      currentFlow = 'main';
+      finalBranchTarget = null;
+      maxProgressIndex = 0;
+      currentPdfUrl = '';
+      currentPdfRole = '';
+      pdfScrollTop = 0;
+      Object.keys(projectCompleted).forEach(key => projectCompleted[key] = false);
+      Object.keys(sdaSolvedPages).forEach(key => delete sdaSolvedPages[key]);
+      document.querySelectorAll('[data-savekey]').forEach(el => { el.value = ''; });
+      refreshAllSdaDisplays();
+      exitPdfMode();
+      showPage(1);
+      isApplyingRemoteData = false;
+    }
+    async function registerUser() {
+      const usernameInput = document.getElementById('auth-username');
+      const passwordInput = document.getElementById('auth-password');
+      const rawUsername = usernameInput.value || '';
+      const username = rawUsername.trim().toLowerCase();
+      const password = passwordInput.value;
+      if (!username || !password) {
+        setAuthStatus('Enter username and password', true);
+        setAuthModalStatus('Enter username and password.', true);
+        return;
+      }
+      if (/\s/.test(rawUsername)) {
+        setAuthStatus('Username cannot contain spaces', true);
+        setAuthModalStatus('Username cannot contain spaces.', true);
+        return;
+      }
+      setAuthStatus('Registering...');
+      setAuthModalStatus('Registering...', false);
+      try {
+        const result = await apiFetch('/api/register', {
+          method: 'POST',
+          body: JSON.stringify({ username, password, appId: APP_ID })
+        });
+        saveSessionLocally(result.token, result.username || username);
+        passwordInput.value = '';
+        if (result.saveData && typeof result.saveData === 'object') {
+          await applyProgressPayload(result.saveData);
+        }
+        setSaveStatus('Loaded');
+        setAuthModalStatus('Account created.', false);
+        closeAuthOverlay();
+      } catch (err) {
+        setAuthStatus(err.message || 'Register failed', true);
+        setAuthModalStatus(err.message || 'Register failed', true);
+      }
+    }
+    async function loginUser() {
+      const usernameInput = document.getElementById('auth-username');
+      const passwordInput = document.getElementById('auth-password');
+      const rawUsername = usernameInput.value || '';
+      const username = rawUsername.trim().toLowerCase();
+      const password = passwordInput.value;
+      if (!username || !password) {
+        setAuthStatus('Enter username and password', true);
+        setAuthModalStatus('Enter username and password.', true);
+        return;
+      }
+      if (/\s/.test(rawUsername)) {
+        setAuthStatus('Username cannot contain spaces', true);
+        setAuthModalStatus('Username cannot contain spaces.', true);
+        return;
+      }
+      setAuthStatus('Logging in...');
+      setAuthModalStatus('Logging in...', false);
+      try {
+        const result = await apiFetch('/api/login', {
+          method: 'POST',
+          body: JSON.stringify({ username, password, appId: APP_ID })
+        });
+        saveSessionLocally(result.token, result.username || username);
+        passwordInput.value = '';
+        await loadProgressFromServer();
+        setAuthModalStatus('Logged in.', false);
+        closeAuthOverlay();
+      } catch (err) {
+        setAuthStatus(err.message || 'Login failed', true);
+        setAuthModalStatus(err.message || 'Login failed', true);
+      }
+    }
+    async function loadProgressFromServer() {
+      const result = await apiFetch('/api/load?appId=' + encodeURIComponent(APP_ID), { method: 'GET' });
+      if (result.username) {
+        loggedInUsername = result.username;
+        localStorage.setItem(SESSION_STORAGE.username, loggedInUsername);
+      }
+      updateAuthUI();
+      await applyProgressPayload(result.saveData || {});
+      setSaveStatus('Loaded');
+    }
+    async function flushPendingSaveBeforeLogout() {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = null;
+      if (!authToken || isApplyingRemoteData) return;
+      if (saveInFlight) {
+        saveQueued = true;
+        while (saveInFlight) await wait(80);
+      }
+      await saveProgressToServer();
+      while (saveInFlight) await wait(80);
+    }
+    async function logout() {
+      try {
+        setSaveStatus('Saving...');
+        await flushPendingSaveBeforeLogout();
+      } catch (err) {
+        console.error(err);
+      }
+      try {
+        if (authToken) await apiFetch('/api/logout', { method: 'POST', body: '{}' });
+      } catch (err) {
+        console.error(err);
+      }
+      const prefill = loggedInUsername || '';
+      clearSessionLocally();
+      resetLocalProgressState();
+      setSaveStatus('Not saved yet');
+      openAuthOverlay(prefill);
+    }
+
+    function initPdfJs() {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    function exitPdfMode() {
+      const roleContainer = document.getElementById('role-container');
+      const viewer = document.getElementById('pdfViewer');
+      const status = document.getElementById('pdfStatus');
+      viewer.innerHTML = '';
+      viewer.style.display = 'none';
+      viewer.scrollTop = 0;
+      status.style.display = 'none';
+      roleContainer.classList.remove('pdf-mode');
+    }
+    async function renderPdfIntoSecondCanvas(pdfUrl, roleName = '', targetScrollTop = 0) {
+      currentPdfUrl = pdfUrl || '';
+      currentPdfRole = roleName || '';
+      pdfScrollTop = targetScrollTop || 0;
+      const roleContainer = document.getElementById('role-container');
+      const viewer = document.getElementById('pdfViewer');
+      const status = document.getElementById('pdfStatus');
+      roleContainer.classList.add('pdf-mode');
+      viewer.style.display = 'block';
+      viewer.innerHTML = '';
+      viewer.scrollTop = 0;
+      status.style.display = 'block';
+      status.textContent = 'Loading PDF.';
+      try {
+        const loadingTask = pdfjsLib.getDocument({ url: pdfUrl });
+        const pdf = await loadingTask.promise;
+        status.textContent = 'Rendering pages.';
+        const targetWidth = 920;
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const baseViewport = page.getViewport({ scale: 1 });
+          const scale = targetWidth / baseViewport.width;
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          canvas.className = 'pdfPageCanvas';
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+          const ctx = canvas.getContext('2d', { alpha: false });
+          viewer.appendChild(canvas);
+          await page.render({ canvasContext: ctx, viewport }).promise;
+        }
+        status.style.display = 'none';
+        viewer.scrollTop = targetScrollTop || 0;
+        queueCloudSave();
+      } catch (err) {
+        console.error('PDF render error:', err);
+        status.textContent = 'Failed to load PDF.';
+      }
+    }
+
+    function initSecondCanvasHotspots() {
+      document.getElementById('hotspot-officer').addEventListener('click', function () { renderPdfIntoSecondCanvas(ROLE_PDF_URLS.officer, 'officer', 0); });
+      document.getElementById('hotspot-professor').addEventListener('click', function () { renderPdfIntoSecondCanvas(ROLE_PDF_URLS.professor, 'professor', 0); });
+      document.getElementById('hotspot-hacker').addEventListener('click', function () { renderPdfIntoSecondCanvas(ROLE_PDF_URLS.hacker, 'hacker', 0); });
+      document.getElementById('pdfViewer').addEventListener('scroll', function () {
+        pdfScrollTop = this.scrollTop;
+        queueCloudSave();
+      });
+      document.getElementById('openFileBtn').addEventListener('click', function () {
+        if (!currentPdfUrl) {
+          showMessagePopup('Please open one role file first.');
+          return;
+        }
+        window.open(currentPdfUrl, '_blank');
+      });
+    }
+
+    function initProjectButtons() {
+      document.getElementById('projectAButton').addEventListener('click', async () => {
+        currentFlow = 'projectA';
+        await runCanvasTransition(() => showPage(4));
+        queueCloudSave();
+      });
+      document.getElementById('projectBButton').addEventListener('click', async () => {
+        currentFlow = 'projectB';
+        await runCanvasTransition(() => showPage(7));
+        queueCloudSave();
+      });
+      document.getElementById('projectCButton').addEventListener('click', async () => {
+        currentFlow = 'projectC';
+        await runCanvasTransition(() => showPage(10));
+        queueCloudSave();
+      });
+    }
+    function initPage13And17Hotspots() {
+      document.getElementById('page13Hotspot').addEventListener('click', async () => {
+        await runCanvasTransition(() => showPage(14));
+        queueCloudSave();
+      });
+      document.getElementById('page17Choice19').addEventListener('click', async () => {
+        finalBranchTarget = 19;
+        await runCanvasTransition(() => showPage(18));
+        queueCloudSave();
+      });
+      document.getElementById('page17Choice20').addEventListener('click', async () => {
+        finalBranchTarget = 20;
+        await runCanvasTransition(() => showPage(18));
+        queueCloudSave();
+      });
+    }
+    function initSdaButtons() {
+      document.querySelectorAll('.sda-trigger').forEach(btn => {
+        btn.addEventListener('click', async function () {
+          const pageNum = Number(this.dataset.page);
+          const isCorrect = answerMatchesPage(pageNum);
+          await triggerSda(pageNum, isCorrect);
+        });
+      });
+      document.querySelectorAll('.sda-answer').forEach(input => {
+        input.addEventListener('input', function () {
+          queueCloudSave();
+        });
+        input.addEventListener('change', function () {
+          queueCloudSave();
+        });
+      });
+    }
+    function initCloudFields() {
+      document.querySelectorAll('[data-savekey]').forEach(el => {
+        el.addEventListener('input', queueCloudSave);
+        el.addEventListener('change', queueCloudSave);
+      });
+    }
+    function initFinalCodeInputs() {
+      document.querySelectorAll('.final-code').forEach(el => {
+        el.addEventListener('input', function () {
+          if (normalizeText(this.value) === 'dw') {
+            this.value = '';
+            queueCloudSave();
+            window.open(BELT_URL, '_blank');
+          }
+        });
+      });
+    }
+
+    function initTranslationWidget() {
+      const widget = document.getElementById('side-widget');
+      const collapseBtn = document.getElementById('collapse-widget');
+      widget.addEventListener('click', function () {
+        if (widget.classList.contains('collapsed')) widget.classList.remove('collapsed');
+      });
+      collapseBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        widget.classList.add('collapsed');
+      });
+      document.getElementById('select-text').addEventListener('click', startSelectionCapture);
+    }
+    function startSelectionCapture() {
+      if (selectionOverlayActive) return;
+      selectionOverlayActive = true;
+      const overlay = document.createElement('div');
+      overlay.id = 'selection-overlay';
+      const box = document.createElement('div');
+      box.id = 'selection-box';
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+
+      let startX = 0;
+      let startY = 0;
+      let selecting = false;
+
+      function cleanup() {
+        selectionOverlayActive = false;
+        overlay.remove();
+      }
+      function updateBox(x1, y1, x2, y2) {
+        const left = Math.min(x1, x2);
+        const top = Math.min(y1, y2);
+        const width = Math.abs(x2 - x1);
+        const height = Math.abs(y2 - y1);
+        box.style.left = left + 'px';
+        box.style.top = top + 'px';
+        box.style.width = width + 'px';
+        box.style.height = height + 'px';
+      }
+
+      overlay.addEventListener('mousedown', function (e) {
+        selecting = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        updateBox(startX, startY, startX, startY);
+      });
+      overlay.addEventListener('mousemove', function (e) {
+        if (!selecting) return;
+        updateBox(startX, startY, e.clientX, e.clientY);
+      });
+      overlay.addEventListener('mouseup', async function (e) {
+        if (!selecting) return;
+        selecting = false;
+        const left = Math.min(startX, e.clientX);
+        const top = Math.min(startY, e.clientY);
+        const width = Math.abs(e.clientX - startX);
+        const height = Math.abs(e.clientY - startY);
+        cleanup();
+        if (width < 8 || height < 8) return;
+        try {
+          const canvas = await html2canvas(document.body, {
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: null,
+            scale: window.devicePixelRatio || 1,
+            scrollX: -window.scrollX,
+            scrollY: -window.scrollY
+          });
+          const ratio = window.devicePixelRatio || 1;
+          const cropCanvas = document.createElement('canvas');
+          cropCanvas.width = width * ratio;
+          cropCanvas.height = height * ratio;
+          const cropCtx = cropCanvas.getContext('2d');
+          cropCtx.drawImage(
+            canvas,
+            left * ratio,
+            top * ratio,
+            width * ratio,
+            height * ratio,
+            0,
+            0,
+            width * ratio,
+            height * ratio
+          );
+          cropCanvas.toBlob(async blob => {
+            try {
+              if (blob && navigator.clipboard && window.ClipboardItem) {
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                window.open('https://translate.google.com/?sl=en&tl=es&op=images', '_blank');
+                showMessagePopup('Your selected image was copied. Paste it into Google Translate.');
+              } else {
+                window.open('https://translate.google.com/?sl=en&tl=es&op=images', '_blank');
+                showMessagePopup('Clipboard copy is not supported here. Please take a screenshot manually and paste it into Google Translate.');
+              }
+            } catch (err) {
+              console.error(err);
+              window.open('https://translate.google.com/?sl=en&tl=es&op=images', '_blank');
+              showMessagePopup('Copy failed. Please take a screenshot manually and paste it into Google Translate.');
+            }
+          }, 'image/png');
+        } catch (err) {
+          console.error(err);
+          showMessagePopup('Screenshot capture failed.');
+        }
+      });
+      overlay.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        cleanup();
+      });
+    }
+
+    function initEventHandlers() {
+      document.getElementById('introBtn').addEventListener('click', openIntro);
+      document.getElementById('prev-btn').addEventListener('click', prevPage);
+      document.getElementById('next-btn').addEventListener('click', nextPage);
+      document.getElementById('logoutBtn').addEventListener('click', logout);
+      document.getElementById('authRegisterBtn').addEventListener('click', registerUser);
+      document.getElementById('authLoginBtn').addEventListener('click', loginUser);
+      document.getElementById('auth-password').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') loginUser();
+      });
+    }
+
+    async function bootstrap() {
+      initPdfJs();
+      initEventHandlers();
+      initProjectButtons();
+      initPage13And17Hotspots();
+      initSdaButtons();
+      initCloudFields();
+      initFinalCodeInputs();
+      initSecondCanvasHotspots();
+      initTranslationWidget();
+      restoreSessionLocally();
+      showPage(1);
+      syncSolvedPagesFromAnswers();
+      if (authToken) {
+        try {
+          await loadProgressFromServer();
+        } catch (err) {
+          console.error(err);
+          setSaveStatus('Load failed');
+          maybeRequireAuthOverlay();
+        }
+      } else {
+        maybeRequireAuthOverlay();
+      }
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>
