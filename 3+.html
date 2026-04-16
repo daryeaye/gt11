@@ -1,0 +1,345 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rectangular Prism Opening Slider</title>
+  <style>
+    :root {
+      --bg: #ececec;
+      --panel: #f6f6f6;
+      --line: #000000;
+      --slider-track: #7ae7faff;
+      --slider-thumb: #000000;
+      --shadow: rgba(0, 0, 0, 0.12);
+      --text: #666;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: var(--bg);
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+    }
+
+    .app {
+      width: min(100%, 1120px);
+      background: var(--panel);
+      border-radius: 20px;
+      box-shadow: 0 12px 28px var(--shadow);
+      padding: 18px 18px 22px;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #ececec;
+      border-radius: 16px;
+    }
+
+    .controls {
+      padding-top: 16px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      margin: 0;
+      height: 54px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--slider-track);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: var(--slider-thumb);
+      border: none;
+      margin-top: -23px;
+      box-shadow: none;
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--slider-track);
+      border: none;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: var(--slider-thumb);
+      border: none;
+      box-shadow: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <canvas id="canvas" width="960" height="540"></canvas>
+    <div class="controls">
+      <input id="slider" type="range" min="0" max="1000" value="0" />
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const slider = document.getElementById('slider');
+
+    const W = 180;
+    const H = 140;
+    const D = 120;
+
+    const CLOSED_ROT_Y = -1.08;  // more side-facing before sliding
+    const CLOSED_ROT_X = 0.50;
+    const OPEN_ROT_Y = -0.72;    // rotates back toward the original orientation
+    const OPEN_ROT_X = 0.58;
+
+    const FACE_STYLES = {
+      front:  'rgba(94, 194, 214, 0.96)',
+      back:   'rgba(122, 231, 250, 0.22)',
+      left:   'rgba(73, 177, 196, 0.68)',
+      right:  'rgba(143, 237, 251, 0.78)',
+      top:    'rgba(131, 234, 249, 0.58)',
+      bottom: 'rgba(88, 188, 207, 0.62)'
+    };
+
+    const HOLD_START = 0.35;
+    const HOLD_END = 0.65;
+
+    let progress = 0;
+    let fit = null;
+
+    function P(x, y, z) {
+      return { x, y, z };
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function rotX(p, angle, hinge) {
+      const y = p.y - hinge.y;
+      const z = p.z - hinge.z;
+      const c = Math.cos(angle);
+      const s = Math.sin(angle);
+      return {
+        x: p.x,
+        y: hinge.y + y * c - z * s,
+        z: hinge.z + y * s + z * c
+      };
+    }
+
+    function rotY(p, angle, hinge) {
+      const x = p.x - hinge.x;
+      const z = p.z - hinge.z;
+      const c = Math.cos(angle);
+      const s = Math.sin(angle);
+      return {
+        x: hinge.x + x * c + z * s,
+        y: p.y,
+        z: hinge.z - x * s + z * c
+      };
+    }
+
+    function worldRotate(p, rotYAngle, rotXAngle) {
+      let x = p.x - W / 2;
+      let y = p.y - H / 2;
+      let z = p.z - D / 2;
+
+      {
+        const c = Math.cos(rotYAngle);
+        const s = Math.sin(rotYAngle);
+        const nx = x * c + z * s;
+        const nz = -x * s + z * c;
+        x = nx;
+        z = nz;
+      }
+
+      {
+        const c = Math.cos(rotXAngle);
+        const s = Math.sin(rotXAngle);
+        const ny = y * c - z * s;
+        const nz = y * s + z * c;
+        y = ny;
+        z = nz;
+      }
+
+      return { x, y, z };
+    }
+
+    function buildFaces(t) {
+      const leftAngle = -Math.PI / 2 * t;
+      const rightAngle = Math.PI / 2 * t;
+      const topAngle = Math.PI / 2 * t;
+      const bottomAngle = -Math.PI / 2 * t;
+      const backAngle = Math.PI / 2 * t;
+
+      const rotYAngle = lerp(CLOSED_ROT_Y, OPEN_ROT_Y, t);
+      const rotXAngle = lerp(CLOSED_ROT_X, OPEN_ROT_X, t);
+
+      const front = [
+        P(0, 0, 0),
+        P(W, 0, 0),
+        P(W, H, 0),
+        P(0, H, 0)
+      ];
+
+      const left = [
+        P(0, 0, 0),
+        P(0, 0, D),
+        P(0, H, D),
+        P(0, H, 0)
+      ].map(p => rotY(p, leftAngle, P(0, 0, 0)));
+
+      const right = [
+        P(W, 0, 0),
+        P(W, H, 0),
+        P(W, H, D),
+        P(W, 0, D)
+      ].map(p => rotY(p, rightAngle, P(W, 0, 0)));
+
+      const top = [
+        P(0, 0, 0),
+        P(W, 0, 0),
+        P(W, 0, D),
+        P(0, 0, D)
+      ].map(p => rotX(p, topAngle, P(0, 0, 0)));
+
+      const bottom = [
+        P(0, H, 0),
+        P(W, H, 0),
+        P(W, H, D),
+        P(0, H, D)
+      ].map(p => rotX(p, bottomAngle, P(0, H, 0)));
+
+      let back = [
+        P(0, 0, D),
+        P(W, 0, D),
+        P(W, H, D),
+        P(0, H, D)
+      ].map(p => rotX(p, topAngle, P(0, 0, 0)));
+
+      const backHinge = rotX(P(0, 0, D), topAngle, P(0, 0, 0));
+      back = back.map(p => rotX(p, backAngle, backHinge));
+
+      const faces = [
+        { name: 'back', pts: back },
+        { name: 'left', pts: left },
+        { name: 'bottom', pts: bottom },
+        { name: 'right', pts: right },
+        { name: 'top', pts: top },
+        { name: 'front', pts: front }
+      ];
+
+      for (const face of faces) {
+        face.world = face.pts.map(p => worldRotate(p, rotYAngle, rotXAngle));
+        face.avgZ = face.world.reduce((sum, p) => sum + p.z, 0) / face.world.length;
+      }
+
+      return faces;
+    }
+
+    function sliderToProgress(value) {
+      const s = Math.max(0, Math.min(1, value / 1000));
+      if (s <= HOLD_START) return s / HOLD_START;
+      if (s <= HOLD_END) return 1;
+      return 1 - (s - HOLD_END) / (1 - HOLD_END);
+    }
+
+    function computeFit() {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+
+      for (let i = 0; i <= 100; i++) {
+        const s = i / 100;
+        const faces = buildFaces(sliderToProgress(s * 1000));
+        for (const face of faces) {
+          for (const p of face.world) {
+            minX = Math.min(minX, p.x);
+            maxX = Math.max(maxX, p.x);
+            minY = Math.min(minY, p.y);
+            maxY = Math.max(maxY, p.y);
+          }
+        }
+      }
+
+      const padding = 36;
+      const scale = Math.min(
+        (canvas.width - padding * 2) / (maxX - minX),
+        (canvas.height - padding * 2) / (maxY - minY)
+      );
+
+      return {
+        scale,
+        offsetX: canvas.width / 2 - ((minX + maxX) / 2) * scale,
+        offsetY: canvas.height / 2 - ((minY + maxY) / 2) * scale
+      };
+    }
+
+    function toScreen(p) {
+      return {
+        x: p.x * fit.scale + fit.offsetX,
+        y: p.y * fit.scale + fit.offsetY,
+        z: p.z
+      };
+    }
+
+    function drawFace(face) {
+      const pts = face.world.map(toScreen);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.closePath();
+      ctx.fillStyle = FACE_STYLES[face.name];
+      ctx.fill();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 4;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ececec';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const faces = buildFaces(progress).sort((a, b) => a.avgZ - b.avgZ);
+      for (const face of faces) drawFace(face);
+    }
+
+    slider.addEventListener('input', (e) => {
+      progress = sliderToProgress(Number(e.target.value));
+      render();
+    });
+
+    fit = computeFit();
+    progress = sliderToProgress(Number(slider.value));
+    render();
+  </script>
+</body>
+</html>
