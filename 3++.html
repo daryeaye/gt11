@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Triangular Prism Net Slider</title>
+  <style>
+    :root {
+      --bg: #ececec;
+      --panel: #f6f6f6;
+      --shadow: rgba(0, 0, 0, 0.12);
+      --slider-track: #7ae7faff;
+      --slider-thumb: #000000;
+      --edge: #000000;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: var(--bg);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .app {
+      width: min(100%, 1120px);
+      background: var(--panel);
+      border-radius: 20px;
+      box-shadow: 0 12px 28px var(--shadow);
+      padding: 18px;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #ececec;
+      border-radius: 16px;
+    }
+
+    .controls {
+      padding-top: 16px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 64px;
+      margin: 0;
+      background: transparent;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      background: var(--slider-track);
+      border-radius: 999px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 54px;
+      height: 54px;
+      margin-top: -24px;
+      border-radius: 50%;
+      background: var(--slider-thumb);
+      border: 0;
+      box-shadow: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 6px;
+      background: var(--slider-track);
+      border-radius: 999px;
+      border: 0;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: var(--slider-thumb);
+      border: 0;
+      box-shadow: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <canvas id="canvas" width="960" height="540"></canvas>
+    <div class="controls">
+      <input id="slider" type="range" min="0" max="1000" value="0" />
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const slider = document.getElementById('slider');
+
+    const TRI_H = 150;
+    const TRI_W = 200;
+    const PRISM_LEN = 220;
+
+    const HOLD_START = 0.22;
+    const HOLD_END = 0.78;
+
+    const SHEAR_X = -0.6;
+    const SHEAR_Y = -0.6;
+
+    const FACE_STYLES = {
+      back:   'rgba(76, 186, 206, 0.62)',
+      left:   'rgba(60, 164, 184, 0.78)',
+      center: 'rgba(122, 231, 250, 0.78)',
+      right:  'rgba(145, 239, 252, 0.64)',
+      front:  'rgba(96, 207, 227, 0.92)'
+    };
+
+    // Closed-view affine projection chosen to resemble the reference prism sketch
+    // before the slider moves. As the prism unfolds, this view eases back to the
+    // original net-friendly projection.
+    const CLOSED_AX = 0.725;
+    const CLOSED_AY = 0.0133333333;
+    const CLOSED_AZ = 0.4121212121;
+    const CLOSED_BX = 0.0;
+    const CLOSED_BY = -0.56;
+    const CLOSED_BZ = -0.1893939394;
+
+    function P(x, y, z) {
+      return { x, y, z };
+    }
+
+    function add(a, b) {
+      return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
+    }
+
+    function sub(a, b) {
+      return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+    }
+
+    function scale(v, k) {
+      return { x: v.x * k, y: v.y * k, z: v.z * k };
+    }
+
+    function dot(a, b) {
+      return a.x * b.x + a.y * b.y + a.z * b.z;
+    }
+
+    function cross(a, b) {
+      return {
+        x: a.y * b.z - a.z * b.y,
+        y: a.z * b.x - a.x * b.z,
+        z: a.x * b.y - a.y * b.x
+      };
+    }
+
+    function normalize(v) {
+      const len = Math.hypot(v.x, v.y, v.z) || 1;
+      return { x: v.x / len, y: v.y / len, z: v.z / len };
+    }
+
+    function rotateAroundAxis(p, a, b, angle) {
+      const u = normalize(sub(b, a));
+      const v = sub(p, a);
+      const c = Math.cos(angle);
+      const s = Math.sin(angle);
+      const term1 = scale(v, c);
+      const term2 = scale(cross(u, v), s);
+      const term3 = scale(u, dot(u, v) * (1 - c));
+      return add(a, add(add(term1, term2), term3));
+    }
+
+    const A = P(0, 0, 0);
+    const B = P(0, TRI_H, 0);
+    const C = P(TRI_W, 0, 0);
+    const A1 = P(0, 0, PRISM_LEN);
+    const B1 = P(0, TRI_H, PRISM_LEN);
+    const C1 = P(TRI_W, 0, PRISM_LEN);
+
+    const RIGHT_OPEN_ANGLE = -Math.atan2(TRI_H, -TRI_W);
+
+    function easeInOut(x) {
+      return x * x * (3 - 2 * x);
+    }
+
+    function buildFaces(t) {
+      const leftAngle = (Math.PI / 2) * t;
+      const rightAngle = RIGHT_OPEN_ANGLE * t;
+      const frontAngle = (-Math.PI / 2) * t;
+      const backAngle = (Math.PI / 2) * t;
+
+      const center = [A, C, C1, A1];
+      const left = [A, B, B1, A1].map(p => rotateAroundAxis(p, A, A1, leftAngle));
+      const right = [C, B, B1, C1].map(p => rotateAroundAxis(p, C, C1, rightAngle));
+      const front = [A, B, C].map(p => rotateAroundAxis(p, A, C, frontAngle));
+      const back = [A1, B1, C1].map(p => rotateAroundAxis(p, A1, C1, backAngle));
+
+      return [
+        { name: 'back', pts: back },
+        { name: 'right', pts: right },
+        { name: 'left', pts: left },
+        { name: 'center', pts: center },
+        { name: 'front', pts: front }
+      ];
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function projectOpen(p) {
+      return {
+        x: p.x + SHEAR_X * p.y,
+        y: p.z + SHEAR_Y * p.y
+      };
+    }
+
+    function projectClosed(p) {
+      return {
+        x: CLOSED_AX * p.x + CLOSED_AY * p.y + CLOSED_AZ * p.z + 48.6666667,
+        y: CLOSED_BX * p.x + CLOSED_BY * p.y + CLOSED_BZ * p.z + 124.3333333
+      };
+    }
+
+    function project(p, t) {
+      const open = projectOpen(p);
+      const closed = projectClosed(p);
+      const mix = easeInOut(1 - t);
+      return {
+        x: lerp(open.x, closed.x, mix),
+        y: lerp(open.y, closed.y, mix)
+      };
+    }
+
+    function sliderToProgress(value) {
+      const s = Math.max(0, Math.min(1, value / 1000));
+      if (s <= HOLD_START) return s / HOLD_START;
+      if (s <= HOLD_END) return 1;
+      return 1 - (s - HOLD_END) / (1 - HOLD_END);
+    }
+
+    let fit = null;
+    let progress = sliderToProgress(Number(slider.value));
+
+    function computeFit() {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+
+      for (let i = 0; i <= 200; i++) {
+        const t = i / 200;
+        const faces = buildFaces(t);
+        for (const face of faces) {
+          for (const p of face.pts) {
+            const q = project(p, t);
+            minX = Math.min(minX, q.x);
+            maxX = Math.max(maxX, q.x);
+            minY = Math.min(minY, q.y);
+            maxY = Math.max(maxY, q.y);
+          }
+        }
+      }
+
+      const padding = 42;
+      const scale = Math.min(
+        (canvas.width - padding * 2) / (maxX - minX),
+        (canvas.height - padding * 2) / (maxY - minY)
+      );
+
+      return {
+        scale,
+        offsetX: canvas.width / 2 - ((minX + maxX) / 2) * scale,
+        offsetY: canvas.height / 2 - ((minY + maxY) / 2) * scale
+      };
+    }
+
+    function toScreen(p, t) {
+      const q = project(p, t);
+      return {
+        x: q.x * fit.scale + fit.offsetX,
+        y: q.y * fit.scale + fit.offsetY
+      };
+    }
+
+    function drawFace(face, t) {
+      const pts = face.pts.map(p => toScreen(p, t));
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.closePath();
+
+      ctx.fillStyle = FACE_STYLES[face.name];
+      ctx.fill();
+
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 4;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ececec';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const faces = buildFaces(progress);
+      const drawOrder = progress < 0.12
+        ? ['back', 'right', 'center', 'left', 'front']
+        : ['back', 'right', 'left', 'center', 'front'];
+
+      for (const name of drawOrder) {
+        drawFace(faces.find(face => face.name === name), progress);
+      }
+    }
+
+    slider.addEventListener('input', (e) => {
+      progress = sliderToProgress(Number(e.target.value));
+      render();
+    });
+
+    fit = computeFit();
+    render();
+  </script>
+</body>
+</html>
