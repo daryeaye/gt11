@@ -823,6 +823,9 @@
         <button class="role-hotspot" id="hotspot-officer" style="left:195px; top:121px; width:328px; height:276px;" aria-label="Officer" title="Officer"></button>
         <button class="role-hotspot" id="hotspot-professor" style="left:637px; top:121px; width:328px; height:277px;" aria-label="Professor" title="Professor"></button>
         <button class="role-hotspot" id="hotspot-hacker" style="left:1079px; top:121px; width:328px; height:277px;" aria-label="Hacker" title="Hacker"></button>
+        <button class="role-hotspot" id="hotspot-video"
+  style="left:502px; top:767px; width:596px; height:51px;"
+  aria-label="What is the file for?" title="What is the file for?"></button>
       </div>
       <div id="pdfViewer"></div>
     </div>
@@ -1631,6 +1634,9 @@ async function applyProgressPayload(payload) {
       document.getElementById('hotspot-officer').addEventListener('click', function () { renderPdfIntoSecondCanvas(ROLE_PDF_URLS.officer, 'officer', 0); });
       document.getElementById('hotspot-professor').addEventListener('click', function () { renderPdfIntoSecondCanvas(ROLE_PDF_URLS.professor, 'professor', 0); });
       document.getElementById('hotspot-hacker').addEventListener('click', function () { renderPdfIntoSecondCanvas(ROLE_PDF_URLS.hacker, 'hacker', 0); });
+        document.getElementById('hotspot-video').addEventListener('click', function () {
+    window.open('https://www.youtube.com/watch?v=Fj98o3aFfk8', '_blank');
+  });
       document.getElementById('pdfViewer').addEventListener('scroll', function () {
         pdfScrollTop = this.scrollTop;
         queueCloudSave();
